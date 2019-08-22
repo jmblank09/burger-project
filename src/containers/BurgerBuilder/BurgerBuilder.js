@@ -30,6 +30,12 @@ class BurgerBuilder extends Component {
     loading: false,
   }
 
+  componentDidMount() {
+    axios.get('/ingredients.json')
+      .then(res => this.setState({ingredients: res.data}))
+      .catch(err => console.log(err));
+  }
+
   addIngredientHandler = (type) => {
     const updatedCount = this.state.ingredients[type] + 1;
     const updatedIngredients = { ...this.state.ingredients };
@@ -104,16 +110,32 @@ class BurgerBuilder extends Component {
       loading
     } = this.state;
     const disabledInfo = {...ingredients};
+    let orderSummary = null;
+    let burger = <Spinner />;
 
     for (let key in disabledInfo) {
       disabledInfo[key] = disabledInfo[key] <= 0
     }
 
-    let orderSummary = <OrderSummary
-      purchaseCancelled={this.purchaseCancelHandler}
-      purchaseContinued={this.purchaseContinueHandler}
-      ingredients={ingredients}
-      price={totalPrice} />;
+    if (ingredients) {
+      burger = (
+        <Aux>
+          <Burger ingredients={ingredients} />
+          <BuildControls
+            ingredientAdded={this.addIngredientHandler}
+            ingredientRemoved={this.removeIngredientHandler}
+            disabled={disabledInfo}
+            price={totalPrice}
+            purchasable={purchasable}
+            ordered={this.purchaseHandler} />
+        </Aux>
+      );
+      orderSummary = <OrderSummary
+        purchaseCancelled={this.purchaseCancelHandler}
+        purchaseContinued={this.purchaseContinueHandler}
+        ingredients={ingredients}
+        price={totalPrice} />;
+    }
 
     if (loading) {
       orderSummary = <Spinner />
@@ -121,14 +143,7 @@ class BurgerBuilder extends Component {
 
     return (
       <Aux>
-        <Burger ingredients={ingredients} />
-        <BuildControls
-          ingredientAdded={this.addIngredientHandler}
-          ingredientRemoved={this.removeIngredientHandler}
-          disabled={disabledInfo}
-          price={totalPrice}
-          purchasable={purchasable}
-          ordered={this.purchaseHandler} />
+        {burger}
         <Modal show={purchasing} modalClosed={this.purchaseCancelHandler}>
           {orderSummary}
         </Modal>
